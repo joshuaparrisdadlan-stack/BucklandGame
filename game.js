@@ -32,6 +32,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const messageDiv = document.getElementById('message');
 const questDiv = document.getElementById('quest');
+const progressListSpan = document.getElementById('progressList');
 
 // Fun dialog choices
 const greetDialog = [
@@ -54,9 +55,63 @@ function draw() {
   // Draw houses as sprites
   houses.forEach((h, idx) => {
     ctx.drawImage(houseImg, h.x, h.y, h.w, h.h);
-    ctx.fillStyle = "#222";
+    // Visited tick badge
+    if (player.met.includes(h.name)) {
+      ctx.fillStyle = "#2ecc71";
+      ctx.beginPath();
+      ctx.arc(h.x + h.w - 8, h.y + 8, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("✓", h.x + h.w - 8, h.y + 8 + 0.5);
+    }
+  });
+
+  // Draw address labels in a second pass, sorted left-to-right to minimize collisions
+  const labelEntries = houses.map(h => {
+    const labelX = h.x + Math.floor(h.w / 2);
+    const baseY = h.y + h.h + 16;
+    return { house: h, labelX, baseY };
+  }).sort((a, b) => a.labelX - b.labelX);
+
+  const placedLabelRects = [];
+  const intersects = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+
+  labelEntries.forEach(entry => {
+    const h = entry.house;
+    const addrNumber = h.name.replace(" Buckland St", "");
+    const addrStreet = "Buckland St";
+    const labelX = entry.labelX;
+    const labelTopY = entry.baseY;
     ctx.font = "11px sans-serif";
-    ctx.fillText(h.name, h.x, h.y + h.h + 15);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const maxLabelWidth = Math.max(h.w + 10, 72);
+    const labelHeight = 28;
+    let labelRect = {
+      x: labelX - maxLabelWidth / 2,
+      y: labelTopY - 3,
+      w: maxLabelWidth,
+      h: labelHeight
+    };
+    // collision resolution with margin
+    const withMargin = (r) => ({ x: r.x - 4, y: r.y - 2, w: r.w + 8, h: r.h + 4 });
+    let guard = 0;
+    while (placedLabelRects.some(r => intersects(withMargin(labelRect), withMargin(r))) && guard < 30) {
+      labelRect.y += 16;
+      guard++;
+    }
+    placedLabelRects.push(labelRect);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.strokeStyle = "rgba(0,0,0,0.15)";
+    ctx.lineWidth = 1;
+    ctx.fillRect(labelRect.x, labelRect.y, labelRect.w, labelRect.h);
+    ctx.strokeRect(labelRect.x, labelRect.y, labelRect.w, labelRect.h);
+    ctx.fillStyle = "#222";
+    ctx.fillText(addrNumber, labelX, labelRect.y + 3);
+    ctx.fillText(addrStreet, labelX, labelRect.y + 17);
   });
 
   // Draw player
@@ -69,6 +124,14 @@ function draw() {
   // Show quest status
   questDiv.textContent = questText + " Neighbours met: " + player.met.length + "/" + houses.length;
   if (player.met.length === houses.length) questDiv.textContent += " - Complete! 🎉";
+
+  // Update progress panel
+  const metHouses = houses.filter(h => player.met.includes(h.name));
+  if (metHouses.length === 0) {
+    progressListSpan.textContent = "None yet";
+  } else {
+    progressListSpan.textContent = metHouses.map(h => `${h.resident} (${h.name})`).join(", ");
+  }
 }
 
 // Movement handler
