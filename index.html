@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Buckland Street Game</title>
+  <style>
+    body { background: #eee; text-align: center; font-family: sans-serif; }
+    canvas { background: #fff; border: 1px solid #333; display: block; margin: auto; }
+    #message { margin-top: 10px; min-height: 2em; }
+    #quest { margin-top: 6px; color: darkgreen; min-height: 2em; }
+  </style>
+</head>
+<body>
+  <h1>Buckland Street Game</h1>
+  <canvas id="gameCanvas" width="650" height="420"></canvas>
+  <div id="quest"></div>
+  <div id="message"></div>
+  <p>
+    <strong>Controls:</strong> Arrow keys (← → ↑ ↓) to move.<br>
+    <strong>Spacebar</strong> to knock when at a house.
+  </p>
+  <script src="game.js"></script>
+</body>
+</html>
